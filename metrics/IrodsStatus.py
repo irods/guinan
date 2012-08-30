@@ -1,10 +1,8 @@
 import logging
 import sys
-import irods
 import GuinanCommon
 import subprocess
 import re
-import json
 import time
 from IrodsMetricAbstract import IrodsMetric
 
@@ -53,75 +51,6 @@ class IrodsStatus(IrodsMetric):
 
 		logging.debug('Initialized %s module' % self.__class__.__name__)
 
-	def getLocalMetrics(self):
-
-		localFile = 'metrics/' + self.__class__.__name__ + '.local' 
-		try:
-			f = open(localFile, 'r')
-		except IOError as e:
-			logging.warning('%s: cannot find local metrics file' % \
-				self.__class__.__name__)
-			return None
-
-		metricsStream = f.read()
-		f.close
-                localMetrics = json.loads(metricsStream)
-
-		return localMetrics
-
-	def setLocalMetrics(self, metrics):
-
-		localFile = 'metrics/' + self.__class__.__name__ + '.local' 
-		f = open(localFile, 'w')
-		if f is not None:
-			metricsJson = json.dumps(metrics)
-			f.write(metricsJson)
-			f.close
-
-	def getIrodsMetrics(self):
-
-		irodsMetrics = None
-
-		metricsFile = self.mRods.getMetricsFilePath() \
-			+ '/' + self.__class__.__name__ + '.json'
-		f = irods.iRodsOpen(self.conn, metricsFile, 'r')
-		if f is not None:
-			metricsStream = f.read()
-                	irodsMetrics = json.loads(metricsStream)
-			f.close
-
-		return irodsMetrics
-
-	def setIrodsMetrics(self, metrics):
-
-		if (metrics is None):
-			return
-
-		irodsMetricsList = list()
-
-		# retrieve list of metrics passed in
-		tmpMetricsList = metrics[self.__class__.__name__]
-
-		# first see if irods metrics already exist
-		irodsMetrics = self.getIrodsMetrics()
-		if irodsMetrics is not None:
-			irodsMetricsList = \
-				 irodsMetrics[self.__class__.__name__]
-
-		# now add my new metrics to these metrics
-		irodsMetricsList += tmpMetricsList
-		metrics[self.__class__.__name__] = irodsMetricsList
-
-		# finally save as a json file to iRODS
-		metricsFile = self.mRods.getMetricsFilePath() \
-			+ '/' + self.__class__.__name__ + '.json'
-		f = irods.iRodsOpen(self.conn, metricsFile, 'w')
-		if f is not None:
-			metricsJson = json.dumps(metrics)
-			f.write(metricsJson)
-			f.close()
-			logging.debug('Saved updated metrics to iRODS')
-
 	def metricsMatch(self, live, local):
 
 		# if there are no saved local metrics - assume
@@ -129,7 +58,7 @@ class IrodsStatus(IrodsMetric):
 		if local is None:
 			return False
 
-		liveM = local[self.__class__.__name__][0]
+		liveM = live[self.__class__.__name__][0]
 		localM = local[self.__class__.__name__][0]
 		# now check to see if actual metric has changed
 		if (liveM['alive'] != localM['alive']):
@@ -147,12 +76,7 @@ class IrodsStatus(IrodsMetric):
 		irodsUp = False
 
 		logging.debug('Running %s metrics' % self.__class__.__name__)
-		# do this if you need to access irods directly 
 		self.mRods = GuinanCommon.MonitoredIrods()
-		self.conn = self.mRods.getConnection()
-		if self.conn is None:
-			logging.warning('%s: cannot connect to iRODS. Will cache metrics.' \
-				% self.__class__.__name__)
 
 		# get my live metrics
 		irodsStatus = dict() # {"IrodsStatus": <value is timestampList>}
@@ -179,7 +103,6 @@ class IrodsStatus(IrodsMetric):
 
 		if self.metricsMatch(irodsStatus, localMetrics):
 			# Done! Nothing else to do	
-			self.mRods.disconnect()
 			logging.debug('Metrics match: returning without updating')
 			return
 		else:
@@ -196,7 +119,7 @@ class IrodsStatus(IrodsMetric):
 					
 			self.setLocalMetrics(irodsStatus)
 
-			if irodsUp:
+			if self.isIrodsUp():
 				# save all of the data in the local metrics file to iRODS
 				# will take cached data, if any, in preference
 				# do not need to restore CachedStatus list in local file
@@ -217,6 +140,8 @@ class IrodsStatus(IrodsMetric):
 				# add live metric data to CachedStatus list
 				# and save updated CachedStatus list to local
 				# metrics file
+				logging.warning('%s: cannot connect to iRODS. Will cache metrics.' \
+					% self.__class__.__name__)
 				if cachedMetricsList is None:
 					cachedMetricsList = list()
 				cachedMetricsList.append(timestamp)
@@ -226,7 +151,6 @@ class IrodsStatus(IrodsMetric):
 				tmpLocalMetrics['CachedStatus'] = cachedMetricsList
 				self.setLocalMetrics(tmpLocalMetrics)
 
-		# finally disconnect
-		self.mRods.disconnect()
 
+		# Done!
 		logging.info('%s: completed metric collection successfully' % self.__class__.__name__)
