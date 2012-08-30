@@ -14,12 +14,10 @@ def loadMetrics(directory):
 		classList = list()
 		if modList:
 			for m in modList:
-				print m
 				modName = os.path.splitext(m)[0]
 				try:
 					module = __import__(modName)
 				except (ImportError, NotImplementedError):
-					print 'help!'
 					continue
 				for cls in dir(module):
 					cls = getattr(module, cls)
@@ -28,6 +26,50 @@ def loadMetrics(directory):
 				    	issubclass(cls, met.IrodsMetric)):
 						classList.append(cls)
 	return classList
+
+# write current Guinan run number to file
+def setRunNumber(num):
+	runFile = '.runs'
+        try:
+                f = open(runFile, 'w')
+        except IOError as e:
+                logging.error('Cannot write to runs file - cannot schedule metrics to run')
+		return
+	
+	f.write(str(num))
+	f.close()
+
+# get current Guinan run number - returns zero if it can't find one
+def getRunNumber():
+	num = 0
+
+	runFile = '.runs'
+        try:
+                f = open(runFile, 'r')
+        except IOError as e:
+                logging.warning('Cannot find runs file - creating a new one')
+                f = open(runFile, 'w')
+		f.write('0')
+		f.close()
+		return num
+
+	strNum = f.read()
+	num = int(strNum)
+	f.close()
+	return num
+
+# this will save the counter for how many times Guinan
+# has been run in the last 365 days. The counter will be
+# reset after 365 days
+def incrementRunNumber():
+  	# first get run number
+	num = getRunNumber()
+	num += 1
+	if (num > cfg.get('guinan', 'run_time_rollover')) :
+		num = 0
+	# now save incremented one
+	setRunNumber(num)
+
 
 # setup logging - want to change this later to append to date stamped
 # log files and clean up logs older that N days
@@ -54,14 +96,16 @@ metricsFolder = os.path.realpath(os.path.abspath(os.path.join(os.path.split( \
 if metricsFolder not in sys.path:
 	sys.path.insert(0, metricsFolder)
 
+runNumber = getRunNumber()
 # load metrics modules
 metrics = loadMetrics(metricsFolderName)
 for metric in metrics:
 	m = metric()
-	if m.runMeEvery > 0:
+	if ((m.runMeEvery > 0) and (runNumber % m.runMeEvery == 0)):
 		logging.info('Running %s metrics. runMeEvery=%d' % \
 			     (m.__class__.__name__, m.runMeEvery))
 		m.runMetrics()
 	
+incrementRunNumber()
 logging.info('Exiting Guinan - status=0')
 sys.exit(0)

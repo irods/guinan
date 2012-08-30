@@ -71,7 +71,7 @@ class IrodsStatus(IrodsMetric):
 
 	def setLocalMetrics(self, metrics):
 
-		localFile = self.__class__.__name__ + '.local' 
+		localFile = 'metrics/' + self.__class__.__name__ + '.local' 
 		f = open(localFile, 'w')
 		if f is not None:
 			metricsJson = json.dumps(metrics)
@@ -179,7 +179,7 @@ class IrodsStatus(IrodsMetric):
 
 		if self.metricsMatch(irodsStatus, localMetrics):
 			# Done! Nothing else to do	
-			irods.rcDisconnect(self.conn)
+			self.mRods.disconnect()
 			logging.debug('Metrics match: returning without updating')
 			return
 		else:
@@ -221,10 +221,12 @@ class IrodsStatus(IrodsMetric):
 					cachedMetricsList = list()
 				cachedMetricsList.append(timestamp)
 				tmpLocalMetrics = self.getLocalMetrics()
+				if tmpLocalMetrics is None:
+					tmpLocalMetrics = dict()
 				tmpLocalMetrics['CachedStatus'] = cachedMetricsList
 				self.setLocalMetrics(tmpLocalMetrics)
 
 		# finally disconnect
-		irods.rcDisconnect(self.conn)
+		self.mRods.disconnect()
 
 		logging.info('%s: completed metric collection successfully' % self.__class__.__name__)

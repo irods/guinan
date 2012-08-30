@@ -40,17 +40,20 @@ class MonitoredIrods(object):
 		self.zone = getIrodsConfigValueFor(self.homePath, 'ZONE_NAME')
 
 	def getConnection(self):
-
-		# now connect
-		conn, err = irods.rcConnect(self.host, self.port, self.user, self.zone)
 		logging.debug('connecting to iRODS: host=%s port=%d login=%s zone=%s' \
          		% (self.host, self.port, self.user, self.zone))
-		if conn is None:
+		# now connect
+		self.conn, err = irods.rcConnect(self.host, self.port, self.user, self.zone)
+		if self.conn is None:
         		logging.info('cannot connect to iRODS - Is server up?')
 		else:
-			irods.clientLoginWithPassword(conn, self.password)
+			irods.clientLoginWithPassword(self.conn, self.password)
 
-		return conn
+		return self.conn
+
+	def disconnect(self):
+		if self.conn is not None:
+			irods.rcDisconnect(self.conn)
 
 	def getMetricsFilePath(self):
 	
