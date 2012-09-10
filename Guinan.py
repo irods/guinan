@@ -74,27 +74,71 @@ def incrementRunNumber():
 # setup logging - want to change this later to append to date stamped
 # log files and clean up logs older that N days
 # 
+guinanRoot = None
+configFile = './GuinanConfig.ini'
+logFile = None
+logLevel = None
+
+# first collect info from Guinan config file to setup logging
 cfg = ConfigParser.ConfigParser()
-cfg.read('./GuinanConfig.ini')
 
-# need to do some good error checking for values read from config
-#if not isinstance(log_level, int):
-#	raise ValueError('Invalid log level: %s' % loglevel)
+# make sure the config file is there
+if os.path.exists(configFile):
+	cfg.read(configFile)
+else:
+	print "Cannot access GuinanConfi.ini for logging information. " + \
+	      "Exiting - status=1"
+	sys.exit(1)
 
-logging.basicConfig(filename=cfg.get('logs', 'filename'),
-	level=cfg.get('logs', 'log_level'),
-	format='%(asctime)s %(message)s')
+# make sure the logging config params are there
+try:
+	logFile = cfg.get('logs', 'filename')
+	logLevel = cfg.get('logs', 'log_level')
+except:
+	print "Cannot find log_level in GuinanConfi.ini for logging information. " + \
+	      "Exiting - status=1"
+	sys.exit(1)
 
+# finally configure the logging
+try:
+	logging.basicConfig(filename=logFile, level=logLevel, \
+		            format='%(asctime)s %(message)s')
+except:
+	print "Logging is not properly configured in GuinanConfi.ini. " + \
+              "Exiting - status=1"
+        sys.exit(1)
+
+# first log!
 logging.info('Started Guinan')
 
-metricsFolderName = './metrics'
+# get the guinan root path
+try: 
+	guinanRoot = cfg.get('guinan', 'root_path')
+except:
+	logging.warn('Cannot find Guinan root_path in %s setting to: ./' % configFile)
+	guinanRoot = './'
+	
+# now get metrics modules path
+metricsFolderName = None
+try: 
+	metricsFolderName = cfg.get('guinan', 'metrics_path')
+except:
+	logging.warn('Cannot find Guinan metrics_path in %s, setting to: %s/metrics' \
+		      % (configFile, guinanRoot))
+	metricsFolderName = guinanRoot + '/metrics'
 
-# set up search path for metrics modules
+# check to make sure this path exists
+if (not os.path.exists(metricsFolderName)):
+	logging.critical('Cannot find Guinan metrics modules path: %s, Exiting - status=1' \
+			 % metricsFolderName)
+	sys.exit(1)
+	
+# set up python search path for metrics modules
 metricsFolder = os.path.realpath(os.path.abspath(os.path.join(os.path.split( \
 			     inspect.getfile(inspect.currentframe()))[0], \
 			     metricsFolderName)))
 if metricsFolder not in sys.path:
-	sys.path.insert(0, metricsFolder)
+	sys.path.insert(1, metricsFolder)
 
 runNumber = getRunNumber()
 # load metrics modules
