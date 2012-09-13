@@ -17,6 +17,10 @@ class IrodsMetric:
 
 	# TODO: change these methods to throw exceptions?
 
+	def __init__(self):
+
+                self.mRods = GuinanCommon.MonitoredIrods()
+
 	def getLocalMetrics(self):
 
                 localFile = 'metrics/' + self.__class__.__name__ + '.local'
@@ -45,18 +49,17 @@ class IrodsMetric:
 	def getIrodsMetrics(self):
 
                 irodsMetrics = None
-                mRods = GuinanCommon.MonitoredIrods()
-                conn = mRods.getConnection()
+                conn = self.mRods.getConnection()
 
 		if (conn is not None):
-                	metricsFile = mRods.getMetricsFilePath() \
+                	metricsFile = self.mRods.getMetricsFilePath() \
                         	+ '/' + self.__class__.__name__ + '.json'
                 	f = irods.iRodsOpen(conn, metricsFile, 'r')
                 	if f is not None:
                         	metricsStream = f.read()
                         	irodsMetrics = json.loads(metricsStream)
                         	f.close
-			mRods.disconnect()
+			self.mRods.disconnect()
 
                 return irodsMetrics
 
@@ -81,10 +84,12 @@ class IrodsMetric:
                 metrics[self.__class__.__name__] = irodsMetricsList
 
                 # finally save as a json file to iRODS
-                mRods = GuinanCommon.MonitoredIrods()
-                conn = mRods.getConnection()
+                conn = self.mRods.getConnection()
 		if (conn is not None):
-                	metricsFile = mRods.getMetricsFilePath() \
+			# create the guinan collection in iRODS if it does not already exist
+			self.createGuinanCollection()
+
+                	metricsFile = self.mRods.getMetricsFilePath() \
                         	+ '/' + self.__class__.__name__ + '.json'
                 	f = irods.iRodsOpen(conn, metricsFile, 'w')
                 	if f is not None:
@@ -92,11 +97,18 @@ class IrodsMetric:
                         	f.write(metricsJson)
                         	f.close()
                         	logging.debug('Saved updated metrics to iRODS')
-			mRods.disconnect()
+			self.mRods.disconnect()
 
 	def isIrodsUp(self):
 
-                mRods = GuinanCommon.MonitoredIrods()
-                conn = mRods.getConnection()
+                conn = self.mRods.getConnection()
 
 		return (conn is not None)
+
+	def createGuinanCollection(self):
+
+                conn = self.mRods.getConnection()
+		path = '/' + self.mRods.getZone()
+		if (conn is not None):
+			coll = irods.irodsCollection(conn, path)
+			coll.createCollection(self.mRods.getCollectionName())

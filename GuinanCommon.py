@@ -16,7 +16,7 @@ def getIrodsConfigValueFor(homePath, key):
         return value
 
 class MonitoredIrods(object):
-	conn = None
+	#conn = None
 	def __init__(self):
 
 		# load config info
@@ -30,6 +30,7 @@ class MonitoredIrods(object):
 		logging.info('collecting iRODS credentials from "%s"' %
 		   self.homePath)
 
+		self.collectionName = 'guinan'
 		host = getIrodsConfigValueFor(self.homePath, 'IRODS_ICAT_HOST')
 		if host == '':
 			host = 'localhost'
@@ -38,8 +39,11 @@ class MonitoredIrods(object):
 		self.user = getIrodsConfigValueFor(self.homePath, 'IRODS_ADMIN_NAME')
 		self.password = getIrodsConfigValueFor(self.homePath, 'IRODS_ADMIN_PASSWORD')
 		self.zone = getIrodsConfigValueFor(self.homePath, 'ZONE_NAME')
+		self.conn = None
 
 	def getConnection(self):
+		err = None
+
 		logging.debug('connecting to iRODS: host=%s port=%d login=%s zone=%s' \
          		% (self.host, self.port, self.user, self.zone))
 		# now connect
@@ -56,6 +60,11 @@ class MonitoredIrods(object):
 			irods.rcDisconnect(self.conn)
 
 	def getMetricsFilePath(self):
+		return '/' + self.zone + '/' + self.collectionName
 	
-		return '/' + self.zone + '/' + 'guinan'
+	def getZone(self):
+		return self.zone
+
+	def getCollectioName():
+		return self.collectionName
 
