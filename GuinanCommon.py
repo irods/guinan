@@ -65,6 +65,6 @@ class MonitoredIrods(object):
 	def getZone(self):
 		return self.zone
 
-	def getCollectioName():
+	def getCollectionName(self):
 		return self.collectionName
 

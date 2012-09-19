@@ -169,13 +169,10 @@ if metricsFolder not in sys.path:
 
 #runNumber = getRunNumber()
 
-# create a queue for metrics results
-q = Queue.Queue()
-
 # load metrics modules
 metrics = loadMetrics(metricsFolderName)
 
-# run each metric module 'runMetrics' method
+# run each metric module 'runMetric' method
 # collect their output in a queue
 for metric in metrics:
 	m = metric()
@@ -183,7 +180,7 @@ for metric in metrics:
 	if ((m.runMeEvery > 0)): # and (runNumber % m.runMeEvery == 0)):
 		logging.info('Running %s. runMeEvery=%d minutes' % \
 			     (metricName, m.runMeEvery))
-		t = threading.Thread(name=metricName, target=m.runMetrics)
+		t = threading.Thread(name=metricName, target=m.runMe)
 		# need to setDaemon=True so any remaining threads will die
 		# when Guinan exits
 		t.setDaemon(True)
