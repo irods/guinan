@@ -2,11 +2,11 @@ import logging
 import sys
 import os
 import threading
-import Queue
 import inspect
 import ConfigParser
 import IrodsMetricAbstract as met
-from time import sleep
+import time
+import json
 
 def loadMetrics(directory):
 
@@ -30,36 +30,75 @@ def loadMetrics(directory):
 						classList.append(cls)
 	return classList
 
-# write current Guinan run number to file
-def setRunNumber(num):
-	runFile = '.runs'
-        try:
-                f = open(runFile, 'w')
-        except IOError as e:
-                logging.error('Cannot write to runs file - cannot schedule metrics to run')
-		return
-	
-	f.write(str(num))
-	f.close()
+# here is the last run info file name - should put this in .ini?
+def getRunStatusFileName():
+	return '.status'
 
-# get current Guinan run number - returns zero if it can't find one
-def getRunNumber():
-	num = 0
+# get the Guinan last run info
+def getLastRunInfo():
+	try:
+		f = open(getRunStatusFileName(), 'r')
+	except IOError as e:
+		logging.info('cannot find Guinan run status file')
+		return None
 
-	runFile = '.runs'
-        try:
-                f = open(runFile, 'r')
-        except IOError as e:
-                logging.warning('Cannot find runs file - creating a new one')
-                f = open(runFile, 'w')
-		f.write('0')
+	lastRunStream = f.read()
+	f.close
+	lastRunInfo = json.loads(lastRunStream)
+
+	return lastRunInfo
+
+# save the last run info for a particular metric module
+def setLastRunTime(moduleName):
+	lastRunTime = time.time()
+
+	lastRunInfo = getLastRunInfo()
+	if (lastRunInfo is None):
+		lastRunInfo = dict()
+	lastRunInfo[moduleName] = lastRunTime
+
+	try:
+		f = open(getRunStatusFileName(), 'w')
+		lastRunInfoJson = json.dumps(lastRunInfo)
+		f.write(lastRunInfoJson)
 		f.close()
-		return num
+	except IOError as e:
+		logging.error('cannot write to Guinan run status file')
 
-	strNum = f.read()
-	num = int(strNum)
-	f.close()
-	return num
+
+# get the last run info for a particular metric module
+def getLastRunTime(moduleName):
+	lastRunTime = -1
+
+	lastRunInfo = getLastRunInfo()
+	if (lastRunInfo is not None):
+		try:
+			lastRunTime = lastRunInfo[moduleName]
+		except:
+			logging.warn('cannot find last run info for "%s"' % \
+				      moduleName)
+	return lastRunTime
+
+# check to see if it is time to run this metric
+def isTimeToRun(metric):
+	timeToRun = False
+	moduleName = metric.__class__.__name__
+	lastRunTime = getLastRunTime(moduleName)
+
+	# check the last time this metric was run and add RunMeEvery
+	# to that value to see if the resulting value is larger
+	# then now
+	# if the last run time cannot be collected the metric will run
+	# also note that if RunMeEvery is set to 0 or less the metric will
+	# never run
+	if ((metric.runMeEvery > 0) and \
+	    ((time.time() >= (lastRunTime + (metric.runMeEvery*60))) or \
+	     (lastRunTime < 0))):
+		timeToRun = True
+
+	return timeToRun
+
+
 
 # this will save the counter for how many times Guinan
 # has been run in the last 365 days. The counter will be
@@ -167,17 +206,15 @@ metricsFolder = os.path.realpath(os.path.abspath(os.path.join(os.path.split( \
 if metricsFolder not in sys.path:
 	sys.path.insert(1, metricsFolder)
 
-#runNumber = getRunNumber()
-
 # load metrics modules
 metrics = loadMetrics(metricsFolderName)
 
-# run each metric module 'runMetric' method
-# collect their output in a queue
+# run each metric module's 'runMetric' method
+# and save metrics in iRODS /zone/guinan
 for metric in metrics:
 	m = metric()
 	metricName = m.__class__.__name__
-	if ((m.runMeEvery > 0)): # and (runNumber % m.runMeEvery == 0)):
+	if (isTimeToRun(m)):
 		logging.info('Running %s. runMeEvery=%d minutes' % \
 			     (metricName, m.runMeEvery))
 		t = threading.Thread(name=metricName, target=m.runMe)
@@ -185,19 +222,19 @@ for metric in metrics:
 		# when Guinan exits
 		t.setDaemon(True)
 		t.start()
+		setLastRunTime(metricName)
 
 logging.debug('List of threads: %s' % threading.enumerate())
 
 # now wait until they are all done, or this execution of Guinan times out
 runtime=0
 while ((threading.activeCount() > 1 ) and (runtime < timeout)):
-	sleep(1)
+	time.sleep(1)
 	runtime += 1
 
 # see if any metrics are still running
 # if they are, log it and then exit - killing remaining metric threads
 logErrantMetricThreads()
 	
-#incrementRunNumber()
 logging.info('Exiting Guinan - status=0')
 sys.exit(0)
