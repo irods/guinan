@@ -1,0 +1,55 @@
+%product iRODS Guinan
+%copyright Any copyright here.
+%vendor Data Intensive Cyberinfrastructure Foundation, Renaissance Computing Institute
+%license COPYING
+%readme README
+%description Python based metrics collection framework for an iRODS data grid
+%version 0.1 000001
+
+%requires python
+#%requires e-irods
+#%requires pyrods
+
+%format all
+
+# =-=-=-=-=-=-=-
+# variables for configuring the install
+# =-=-=-=-=-=-=-
+$OS_EIRODS_ACCT=eirods
+$OS_GUINAN_DIR=guinan
+$GUINAN_HOME_DIR=/var/lib/$OS_GUINAN_DIR
+$CRONTAB=/usr/bin/crontab
+
+# =-=-=-=-=-=-=-
+# preinstall directives
+# =-=-=-=-=-=-=-
+
+# None
+
+
+# =-=-=-=-=-=-=-
+# post install
+# =-=-=-=-=-=-=-
+%postinstall << END_POSTINSTALL
+# set up crontab entry
+su - $OS_EIRODS_ACCT $CRONTAB $GUINAN_HOME_DIR/guinan.cron
+END_POSTINSTALL
+
+
+# =-=-=-=-=-=-=-
+# preremove
+# =-=-=-=-=-=-=-
+%preremove << END_PREREMOVE
+# remove crontab entry
+END_PREREMOVE
+
+
+# =-=-=-=-=-=-=-
+# postremove
+# =-=-=-=-=-=-=-
+
+# None
+
+# =-=-=-=-=-=-=-
+# =-=-=-=-=-=-=-
+# files, and more files...

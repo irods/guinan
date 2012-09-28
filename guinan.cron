@@ -1,0 +1,3 @@
+#run Guinan every minute
+PYTHONPATH=/var/lib/guinan:$PYTHONPATH
+* * * * * cd /var/lib/guinan;python /var/lib/guinan/Guinan.py > /dev/null 2>&1
