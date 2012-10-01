@@ -6,8 +6,12 @@
 %description Python based metrics collection framework for an iRODS data grid
 %version 0.1 000001
 
-%requires python
-#%requires e-irods
+%if RPM
+%requires python26
+%else
+%requires python 2.6
+%endif
+%requires e-irods
 #%requires pyrods
 
 %format all
@@ -32,7 +36,7 @@ $CRONTAB=/usr/bin/crontab
 # =-=-=-=-=-=-=-
 %postinstall << END_POSTINSTALL
 # set up crontab entry
-su - $OS_EIRODS_ACCT $CRONTAB $GUINAN_HOME_DIR/guinan.cron
+$CRONTAB -u $OS_EIRODS_ACCT $GUINAN_HOME_DIR/guinan.cron
 END_POSTINSTALL
 
 
@@ -41,6 +45,7 @@ END_POSTINSTALL
 # =-=-=-=-=-=-=-
 %preremove << END_PREREMOVE
 # remove crontab entry
+$CRONTAB -u $OS_EIRODS_ACCT -r
 END_PREREMOVE
 
 
