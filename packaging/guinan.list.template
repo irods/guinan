@@ -22,7 +22,7 @@
 $OS_EIRODS_ACCT=eirods
 $OS_GUINAN_DIR=guinan
 $GUINAN_HOME_DIR=/var/lib/$OS_GUINAN_DIR
-$CRONTAB=/usr/bin/crontab
+$CRONTAB=crontab
 
 # =-=-=-=-=-=-=-
 # preinstall directives

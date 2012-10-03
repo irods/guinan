@@ -2,7 +2,7 @@
 #requirements:
 # EPM packager
 
-command -v epm >/dev/null 2>&1 || { echo "EPM commands must be in PATH to package iDrop Web. Aborting." >&2; exit 1; }
+command -v epm >/dev/null 2>&1 || { echo "EPM commands must be in PATH to package guinan. Aborting." >&2; exit 1; }
 
 # get into the correct directory
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
