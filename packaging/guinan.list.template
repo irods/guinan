@@ -23,6 +23,7 @@
 $OS_EIRODS_ACCT=eirods
 $OS_GUINAN_DIR=guinan
 $GUINAN_HOME_DIR=/var/lib/$OS_GUINAN_DIR
+$GUINAN_DOC_DIR=/usr/share/doc/$OS_GUINAN_DIR
 $CRONTAB=crontab
 
 # =-=-=-=-=-=-=-
@@ -59,3 +60,8 @@ END_PREREMOVE
 # =-=-=-=-=-=-=-
 # =-=-=-=-=-=-=-
 # files, and more files...
+%if DEB
+f 644 root root ${GUINAN_DOC_DIR}/copyright ./LICENSE
+%else
+f 644 $OS_EIRODS_ACCT $OS_EIRODS_ACCT ${GUINAN_HOME_DIR}/LICENSE ./LICENSE
+%endif
