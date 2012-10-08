@@ -26,6 +26,11 @@ mkdir guinan
 tar xf guinan.tar -C guinan > /dev/null 2>&1
 rm guinan.tar
 
+# tar changelog file
+# first remove any old one
+rm changelog.gz
+gzip -9 -c changelog > changelog.gz
+
 # now create new guinan.list file
 if [ -f guinan.list ]; then
   rm guinan.list
