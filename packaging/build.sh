@@ -44,7 +44,7 @@ elif [ -f "/etc/SuSE-release" ]; then # SuSE
   epm -a noarch -f rpm guinan RPM=true guinan.list
 elif [ -f "/etc/lsb-release" ]; then  # Ubuntu
   echo "Running EPM :: Generating DEB"
-  epm -a noarch -f deb guinan DEB=true guinan.list
+  epm -f deb guinan DEB=true guinan.list
 elif [ -f "/usr/bin/sw_vers" ]; then  # MacOSX
   echo "TODO: generate package for MacOSX"
 fi
