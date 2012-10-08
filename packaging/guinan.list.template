@@ -3,6 +3,7 @@
 %vendor Renaissance Computing Institute <info@e-irods.org>
 %license LICENSE
 %readme README
+%changelog
 %description Python based metrics collection framework for an iRODS data grid
 %version 0.1 000001
 

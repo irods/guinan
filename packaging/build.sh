@@ -38,13 +38,13 @@ rm tmp.list
 # build package
 if [ -f "/etc/redhat-release" ]; then # CentOS and RHEL and Fedora
   echo "Running EPM :: Generating RPM"
-  epm -f rpm guinan RPM=true guinan.list
+  epm -a noarch -f rpm guinan RPM=true guinan.list
 elif [ -f "/etc/SuSE-release" ]; then # SuSE
   echo "Running EPM :: Generating RPM"
-  epm -f rpm guinan RPM=true guinan.list
+  epm -a noarch -f rpm guinan RPM=true guinan.list
 elif [ -f "/etc/lsb-release" ]; then  # Ubuntu
   echo "Running EPM :: Generating DEB"
-  epm -a amd64 -f deb guinan DEB=true guinan.list
+  epm -a noarch -f deb guinan DEB=true guinan.list
 elif [ -f "/usr/bin/sw_vers" ]; then  # MacOSX
   echo "TODO: generate package for MacOSX"
 fi
