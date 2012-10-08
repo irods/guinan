@@ -1,7 +1,7 @@
 %product iRODS Guinan
-%copyright Any copyright here.
-%vendor Data Intensive Cyberinfrastructure Foundation, Renaissance Computing Institute
-%license COPYING
+%copyright 2012 by Renaissance Computing Institute, All Rights Reserved
+%vendor Renaissance Computing Institute <info@e-irods.org>
+%license LICENSE
 %readme README
 %description Python based metrics collection framework for an iRODS data grid
 %version 0.1 000001
