@@ -1,12 +1,31 @@
 #!/bin/bash
-#requirements:
-# EPM packager
-
-command -v epm >/dev/null 2>&1 || { echo "EPM commands must be in PATH to package guinan. Aborting." >&2; exit 1; }
 
 # get into the correct directory
-DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-cd $DIR
+DETECTEDDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+cd $DETECTEDDIR/../
+GITDIR=`pwd`
+BUILDDIR=$GITDIR  # we'll manipulate this later, depending on the coverage flag
+
+
+# check for clean
+if [ "$1" == "clean" ] ; then
+    # clean up any build-created files
+    echo "Cleaning..."
+    rm -f packaging/changelog.gz
+    rm -f packaging/tmp.list
+    rm -f packaging/guinan.list
+    rm -rf packaging/guinan/
+    rm -rf linux-2.*
+    rm -rf linux-3.*
+    rm -rf macosx-10.*
+    rm -rf epm*
+    echo "Done."
+    exit 0
+fi
+
+
+
+
 
 #create EPM .list file
 # available from: http://fossies.org/unix/privat/epm-4.2-source.tar.gz
@@ -18,10 +37,10 @@ if [ -d guinan ]; then
 fi
 
 # first create guinan source folder
-cd ..
-tar -cf guinan.tar --exclude=packaging * > /dev/null 2>&1
+cd $BUILDDIR
+tar -cf guinan.tar --exclude=packaging --exclude=epm* --exclude=logs/.gitignore * > /dev/null 2>&1
 mv guinan.tar packaging
-cd packaging
+cd $BUILDDIR/packaging
 mkdir guinan
 tar xf guinan.tar -C guinan > /dev/null 2>&1
 rm guinan.tar
@@ -36,20 +55,53 @@ if [ -f guinan.list ]; then
   rm guinan.list
 fi
 
-mkepmlist -u eirods -g eirods --prefix /var/lib/guinan guinan > tmp.list
-cat guinan.list.template tmp.list > guinan.list
-rm tmp.list
+
+# get RENCI updates to EPM from repository
+cd $BUILDDIR
+RENCIEPM="epm42-renci.tar.gz"
+rm -rf epm
+rm -f $RENCIEPM
+wget ftp://ftp.renci.org/pub/e-irods/build/$RENCIEPM
+tar -xf $RENCIEPM
+
+
+
+# build EPM
+cd $BUILDDIR/epm
+echo "Configuring EPM"
+set +e
+./configure > /dev/null
+if [ "$?" != "0" ] ; then
+    exit 1
+fi
+echo "Building EPM"
+make > /dev/null
+if [ "$?" != "0" ] ; then
+    exit 1
+fi
+set -e
+
+
+
+# generate guinan.list file
+cd $BUILDDIR
+$BUILDDIR/epm/mkepmlist -u eirods -g eirods --prefix /var/lib/guinan packaging/guinan > packaging/tmp.list
+cat packaging/guinan.list.template packaging/tmp.list > packaging/guinan.list
+
+
 
 # build package
+cd $BUILDDIR
 if [ -f "/etc/redhat-release" ]; then # CentOS and RHEL and Fedora
   echo "Running EPM :: Generating RPM"
-  epm -a noarch -f rpm guinan RPM=true guinan.list
+  $BUILDDIR/epm/epm -a noarch -f rpm guinan RPM=true packaging/guinan.list
 elif [ -f "/etc/SuSE-release" ]; then # SuSE
   echo "Running EPM :: Generating RPM"
-  epm -a noarch -f rpm guinan RPM=true guinan.list
+  $BUILDDIR/epm/epm -a noarch -f rpm guinan RPM=true packaging/guinan.list
 elif [ -f "/etc/lsb-release" ]; then  # Ubuntu
   echo "Running EPM :: Generating DEB"
-  epm -f deb guinan DEB=true guinan.list
+  $BUILDDIR/epm/epm -f deb guinan DEB=true packaging/guinan.list
 elif [ -f "/usr/bin/sw_vers" ]; then  # MacOSX
-  echo "TODO: generate package for MacOSX"
+  echo "Running EPM :: Generating MacOSX DMG"
+  $BUILDDIR/epm/epm -f osx guinan packaging/guinan.list
 fi
