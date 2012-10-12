@@ -11,7 +11,7 @@ BUILDDIR=$GITDIR  # we'll manipulate this later, depending on the coverage flag
 if [ "$1" == "clean" ] ; then
     # clean up any build-created files
     echo "Cleaning..."
-    rm -f packaging/changelog.gz
+    rm -f changelog.gz
     rm -f packaging/tmp.list
     rm -f packaging/guinan.list
     rm -rf packaging/guinan/
@@ -38,7 +38,7 @@ fi
 
 # first create guinan source folder
 cd $BUILDDIR
-tar -cf guinan.tar --exclude=packaging --exclude=epm* --exclude=logs/.gitignore * > /dev/null 2>&1
+tar -cf guinan.tar --exclude=packaging --exclude=epm* --exclude=logs/.gitignore --exclude=linux-* --exclude=macosx-* * > /dev/null 2>&1
 mv guinan.tar packaging
 cd $BUILDDIR/packaging
 mkdir guinan
@@ -47,7 +47,7 @@ rm guinan.tar
 
 # tar changelog file
 # first remove any old one
-rm changelog.gz
+cd $BUILDDIR
 gzip -9 -c changelog > changelog.gz
 
 # now create new guinan.list file
