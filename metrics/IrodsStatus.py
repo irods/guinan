@@ -6,7 +6,7 @@ import re
 import time
 from IrodsMetricAbstract import IrodsMetric
 
-# IrodsStatus metrics local metrics file is formatted like this:
+# IrodsStatus local metrics file is formatted like this:
 # {
 #  "IrodsStatus": [{"timestamp": 1347777777.00, "metric": {"alive": true}}]
 #  "CachedStatus":[{"timestamp": 1347777777.00, "metric": {"alive": false}}]
@@ -28,70 +28,66 @@ def isIrodsServerUp(irods_path):
 class IrodsStatus(IrodsMetric):
 
 	# This attribute lets Guinan know how often this metric 
-	# is collected (units are in minutes)
-	# If it is missing or <=0, this metric will never be collected
+	# is collected (units are in minutes).
+	# If it is missing or <=0, this metric will never be collected.
 	# Also note that individual metrics can never be run more 
-	# frequently then Guinan is configured to run (via cron)
-	# this attribute is required
+	# frequently then Guinan is configured to run (via cron).
+	# This attribute is required.
 	runMeEvery = 10
 
-	# this attribute specifies when the locally saved metric gets
-	# stale and should be updated in irods (units are minutes)
-	# this is useful when Guinan 'blacks out' for some reason and
-	# could not run at regular intervals
+	# This attribute specifies when the locally saved metric gets
+	# stale and should be updated in iRODS (units are minutes).
+	# This is useful when Guinan 'blacks out' for some reason and
+	# could not run at regular intervals.
 	expiration = 60
 
-	# iRODS connection attribute
-	conn = None
-
+	# Compares 'alive' status and then timestamp staleness.
 	def metricsMatch(self, live, local):
 
-		# if there are no saved local metrics - assume
-		#  there has been a change
+		# No saved local metrics, therefore cannot match.
 		if local is None:
 			return False
 
 		localM = local[self.__class__.__name__][0]['metric']
 		localTS = local[self.__class__.__name__][0]
 
-		# now check to see if actual metric has changed
+		# Check to see if actual metric has changed
 		if (live['alive'] != localM['alive']):
 			return False
 
-		# now check to see if metric is stale
+		# Check to see if metric is stale
 		if (time.time() > (localTS['timestamp'] + (self.expiration*60))):
 			return False
 
 		return True
 
-	# this function is required
+	# This function is required.
 	def runMetric(self):
 
-		irodsUp = False
-
-		logging.debug('Running %s metrics' % self.__class__.__name__)
-		self.mRods = GuinanCommon.MonitoredIrods()
-
-		# get my live metrics
+		# Setup
+		logging.debug('Metric begin: %s' % self.__class__.__name__)
 		myMetric = dict() # {"alive": <True or False>}
 
-		# find out if server is up
+		# Find out if server is up
+		irodsUp = False
+		self.mRods = GuinanCommon.MonitoredIrods()
 		irodsUp = isIrodsServerUp(self.mRods.homePath)
 
-		# here is my metric now
+		# Update metric
 		myMetric['alive'] = irodsUp
 
-		# load the json file containing my last collected metrics
-		# and compare to my live metrics (just looking at alive and
-		# to see if the timestamp is too stale)
+		# Load the json file containing last collected update.
 		localMetrics = self.getLocalMetrics()
 		if self.metricsMatch(myMetric, localMetrics):
-			# Done! Nothing else to do	
+			# Matched, nothing is new.
 			logging.debug('Metrics match: returning None')
 			myMetric =  None
 		else:
+            # Did not match.
 			logging.debug('Metrics need to be updated')
 
-		# Done!
-		logging.info('%s: completed metric collection successfully' % self.__class__.__name__)
+		# Cleanup
+		logging.info('Metric complete: %s' % self.__class__.__name__)
+
+        # Return
 		return myMetric
