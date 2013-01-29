@@ -16,6 +16,10 @@ class IrodsMetric:
 	def runMeEvery(self):
 		pass
 
+	@abstractmethod
+	def getMetadata(self):
+		pass
+
 	def getDisplayName(self):
 		return "DisplayName"
 
@@ -147,6 +151,16 @@ class IrodsMetric:
                 timeNow = time.time()
                 timestamp['timestamp'] = timeNow
 		timestamp['metric'] = moduleMetric
+
+		# add any metadata
+		metadata = self.getMetadata()
+		# don't do anything if metadata is None
+		if (metadata is None):
+                        logging.info('%s: No metatdata provided' % \
+                                      self.__class__.__name__)
+		else:
+			timestamp['metadata'] = metadata
+
 		timestampList.append(timestamp)
 
                 # here are the live metrics now

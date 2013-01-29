@@ -90,3 +90,6 @@ class IrodsStatus(IrodsMetric):
 
         # Return
         return myMetric
+
+    def getMetadata(self):
+	return None

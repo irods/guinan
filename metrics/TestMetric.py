@@ -24,10 +24,6 @@ class TestMetric(IrodsMetric):
         myMetric = dict()
         myMetric["message"] = "hello there"
 
-        # Additional metric info used for display in Scotty
-        myMetric[self.getDisplayName()] = "Test Metric"
-        myMetric[self.getDescription()] = "This is just a test."
-
         # Debug message
         logging.debug('%s: returning metric to Guinan: %s' % (self.__class__.__name__, myMetric))
 
@@ -36,3 +32,17 @@ class TestMetric(IrodsMetric):
         # Or return None if you do not want the metric
         # to be saved for some reason.
         return myMetric
+
+    # This function is required.
+    # Attach metadata that cen be used for display purposes in Scotty.
+    # Currenty DisplayName and Description are supported.
+    # If you do not wish to provide any metadata, just return None
+    def getMetadata(self):
+	
+	myMetadata = dict()
+
+        # Additional metric info used for display in Scotty
+        myMetadata[self.getDisplayName()] = "Test Metric"
+        myMetadata[self.getDescription()] = "This is just a test."
+
+	return myMetadata
