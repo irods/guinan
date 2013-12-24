@@ -61,7 +61,7 @@ cd $BUILDDIR
 RENCIEPM="epm42-renci.tar.gz"
 rm -rf epm
 rm -f $RENCIEPM
-wget -nc ftp://ftp.renci.org/pub/eirods/build/$RENCIEPM
+wget -nc ftp://ftp.renci.org/pub/irods/build/$RENCIEPM
 tar -xf $RENCIEPM
 
 
